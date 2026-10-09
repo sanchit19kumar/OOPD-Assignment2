@@ -1,5 +1,6 @@
 #include "bookmgmt/Resource.h"
 
+#include <algorithm>
 #include <ostream>
 #include <sstream>
 #include <stdexcept>
@@ -10,6 +11,10 @@ const char* categoryName(ResourceCategory c) {
     switch (c) {
         case ResourceCategory::Book: return "Book";
         case ResourceCategory::ElectronicResource: return "ElectronicResource";
+        case ResourceCategory::Journal: return "Journal";
+        case ResourceCategory::EBook: return "EBook";
+        case ResourceCategory::AudioBook: return "AudioBook";
+        case ResourceCategory::Thesis: return "Thesis";
     }
     return "Unknown";
 }
@@ -31,13 +36,40 @@ void Resource::setUnitPrice(Money price) {
     unitPrice_ = price;
 }
 
+void Resource::addVendor(std::string vendor, Money price) {
+    if (vendor.empty()) throw std::invalid_argument("vendor name must not be empty");
+    if (price.isNegative()) throw std::invalid_argument("vendor price must not be negative");
+    vendors_.push_back(VendorOffer{std::move(vendor), price});
+}
+
+std::optional<VendorOffer> Resource::cheapestVendor() const {
+    if (vendors_.empty()) return std::nullopt;
+    auto it = std::min_element(vendors_.begin(), vendors_.end(),
+                               [](const VendorOffer& a, const VendorOffer& b) {
+                                   return a.price < b.price;
+                               });
+    return *it;
+}
+
+Money Resource::effectiveUnitPrice() const {
+    auto best = cheapestVendor();
+    if (best) return best->price;
+    return unitPrice_;
+}
+
 void Resource::requirePositive(int quantity) {
     if (quantity <= 0) throw std::invalid_argument("quantity must be positive");
 }
 
 Money Resource::costFor(int quantity) const {
     requirePositive(quantity);
-    return unitPrice_ * quantity;
+    Money unit = effectiveUnitPrice();
+    std::int64_t total = unit.minorUnits() * quantity;
+    // Q5: Print items get 10% off when 10 or more copies are bought at once
+    if (!isDigital() && quantity >= 10) {
+        total = total - (total * 10) / 100;
+    }
+    return Money::fromMinor(total, unit.currency());
 }
 
 void Resource::print(std::ostream& os) const {
@@ -46,6 +78,12 @@ void Resource::print(std::ostream& os) const {
        << "  publisher: " << publisher_ << "\n"
        << "  year: " << year_ << "\n"
        << "  unit price: " << unitPrice_ << "\n";
+    if (!vendors_.empty()) {
+        os << "  vendors:\n";
+        for (const auto& v : vendors_) {
+            os << "    " << v.vendor << " @ " << v.price << "\n";
+        }
+    }
     printDetails(os);
 }
 
@@ -54,7 +92,7 @@ void Resource::printDetails(std::ostream&) const {}
 std::string Resource::summary() const {
     std::ostringstream os;
     os << "[" << categoryName(category()) << "] " << id_ << "  " << title_
-       << " (" << year_ << ")  @ " << unitPrice_;
+       << " (" << year_ << ")  @ " << effectiveUnitPrice();
     return os.str();
 }
 

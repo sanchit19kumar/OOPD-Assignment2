@@ -3,21 +3,36 @@
 //
 //   Resource (abstract)
 //   ├── Book
+//   ├── Journal
+//   ├── Thesis
 //   └── ElectronicResource
+//       ├── EBook
+//       └── AudioBook
 
 #include <iosfwd>
+#include <optional>
 #include <string>
+#include <vector>
 
 #include "bookmgmt/Money.h"
 
 namespace bookmgmt {
 
-// EXTENSION POINT: when adding a new resource type, add a category here,
-// a matching name in categoryName() (Resource.cpp) and an entry in
-// kAllCategories (Budget.cpp).
-enum class ResourceCategory { Book, ElectronicResource };
+enum class ResourceCategory {
+    Book,
+    ElectronicResource,
+    Journal,
+    EBook,
+    AudioBook,
+    Thesis
+};
 
 const char* categoryName(ResourceCategory c);
+
+struct VendorOffer {
+    std::string vendor;
+    Money price;
+};
 
 class Resource {
 public:
@@ -36,19 +51,30 @@ public:
     Money unitPrice() const { return unitPrice_; }
     void setUnitPrice(Money price);
 
+    // Vendors (Q12)
+    void addVendor(std::string vendor, Money price);
+    const std::vector<VendorOffer>& vendors() const { return vendors_; }
+    std::optional<VendorOffer> cheapestVendor() const;
+    Money effectiveUnitPrice() const;
+
     virtual ResourceCategory category() const = 0;
     virtual bool isDigital() const { return false; }
 
     // Total cost of acquiring `quantity` units of this resource.
-    // "Unit" means copies for print items and user seats for electronic
-    // licences. Default: unitPrice * quantity. Throws if quantity <= 0.
-    // EXTENSION POINT: override for discounts, fees, tiered pricing, ...
+    // Default handles print bulk discounts (Q5).
     virtual Money costFor(int quantity) const;
 
     // Writes a multi-line human-readable description.
     void print(std::ostream& os) const;
     // Single-line summary, e.g. "[Book] B001  Clean Code (2008)  @ 450.00".
     std::string summary() const;
+
+    // Search helpers (Q13)
+    virtual std::vector<std::string> searchAuthors() const { return {}; }
+    virtual std::string searchIdentifier() const { return ""; }
+
+    // Serialization (Q13)
+    virtual std::string serialize() const = 0;
 
 protected:
     // Subclasses append their own fields (one "  key: value" line each).
@@ -61,6 +87,7 @@ private:
     std::string publisher_;
     int year_;
     Money unitPrice_;
+    std::vector<VendorOffer> vendors_;
 };
 
 std::ostream& operator<<(std::ostream& os, const Resource& r);

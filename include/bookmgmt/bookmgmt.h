@@ -2,10 +2,14 @@
 // Umbrella header: #include "bookmgmt/bookmgmt.h" to get the whole library.
 
 #include "bookmgmt/Acquisition.h"
+#include "bookmgmt/AudioBook.h"
 #include "bookmgmt/Book.h"
 #include "bookmgmt/Budget.h"
 #include "bookmgmt/Catalog.h"
+#include "bookmgmt/EBook.h"
 #include "bookmgmt/ElectronicResource.h"
 #include "bookmgmt/Exceptions.h"
+#include "bookmgmt/Journal.h"
 #include "bookmgmt/Money.h"
 #include "bookmgmt/Resource.h"
+#include "bookmgmt/Thesis.h"
