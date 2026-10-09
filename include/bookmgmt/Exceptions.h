@@ -35,4 +35,12 @@ public:
     using LibraryError::LibraryError;
 };
 
+// Thrown when amounts in different currencies are combined or compared.
+class CurrencyMismatchError : public LibraryError {
+public:
+    CurrencyMismatchError(const std::string& c1, const std::string& c2)
+        : LibraryError("currency mismatch: cannot combine or compare " + c1 + " and " + c2) {}
+    explicit CurrencyMismatchError(const std::string& msg) : LibraryError(msg) {}
+};
+
 }  // namespace bookmgmt

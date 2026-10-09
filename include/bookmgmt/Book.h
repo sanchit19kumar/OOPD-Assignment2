@@ -22,6 +22,12 @@ public:
 
     ResourceCategory category() const override { return ResourceCategory::Book; }
 
+    Money costFor(int quantity) const override;
+
+    std::vector<std::string> searchAuthors() const override { return authors_; }
+    std::string searchIdentifier() const override { return isbn_; }
+    std::string serialize() const override;
+
 protected:
     void printDetails(std::ostream& os) const override;
 

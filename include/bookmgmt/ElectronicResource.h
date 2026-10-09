@@ -28,6 +28,8 @@ public:
     bool isDigital() const override { return true; }
     Money costFor(int seats) const override;
 
+    std::string serialize() const override;
+
 protected:
     void printDetails(std::ostream& os) const override;
 
